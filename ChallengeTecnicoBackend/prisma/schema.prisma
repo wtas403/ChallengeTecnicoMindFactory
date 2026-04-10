@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Sujeto {
+  id             Int         @id @default(autoincrement())
+  cuit           String      @unique @db.VarChar(11)
+  nombreCompleto String      @db.VarChar(120)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  automotores    Automotor[]
+}
+
+model Automotor {
+  id                Int      @id @default(autoincrement())
+  dominio           String   @unique @db.VarChar(7)
+  chasis            String   @unique @db.VarChar(50)
+  motor             String   @unique @db.VarChar(50)
+  color             String   @db.VarChar(50)
+  fechaFabricacion  String   @db.VarChar(6)
+  sujetoId          Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  sujeto            Sujeto   @relation(fields: [sujetoId], references: [id], onDelete: Restrict)
+
+  @@index([sujetoId])
+}
