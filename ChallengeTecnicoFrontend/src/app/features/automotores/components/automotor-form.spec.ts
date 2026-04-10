@@ -28,7 +28,7 @@ describe('AutomotorForm', () => {
     expect(component.controlError('cuitTitular')).toBe('El CUIT ingresado no es valido.');
   });
 
-  it('emite draft normalizado cuando el formulario es valido', async () => {
+  it('abre confirmacion en alta antes de emitir el draft', async () => {
     await TestBed.configureTestingModule({
       imports: [AutomotorForm],
     }).compileComponents();
@@ -50,6 +50,46 @@ describe('AutomotorForm', () => {
 
     component.onSubmit();
 
+    expect(saveSpy).not.toHaveBeenCalled();
+    expect(component.isConfirmDialogOpen()).toBe(true);
+
+    component.confirmCreate();
+
+    expect(saveSpy).toHaveBeenCalledWith({
+      dominio: 'AA123BB',
+      chasis: 'CH-001',
+      motor: 'MO-001',
+      color: 'Negro',
+      fechaFabricacion: '202401',
+      cuitTitular: '20123456786',
+    });
+  });
+
+  it('emite draft directamente en modo edicion', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AutomotorForm],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AutomotorForm);
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    const saveSpy = vi.spyOn(component.save, 'emit');
+
+    component.form.controls.dominio.enable();
+    component.form.setValue({
+      dominio: 'aa123bb',
+      chasis: 'CH-001',
+      motor: 'MO-001',
+      color: 'Negro',
+      fechaFabricacion: '202401',
+      cuitTitular: '20-12345678-6',
+    });
+
+    component.onSubmit();
+
+    expect(component.isConfirmDialogOpen()).toBe(false);
     expect(saveSpy).toHaveBeenCalledWith({
       dominio: 'AA123BB',
       chasis: 'CH-001',

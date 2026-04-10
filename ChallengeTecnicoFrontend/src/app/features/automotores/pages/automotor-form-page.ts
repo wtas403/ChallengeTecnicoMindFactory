@@ -20,25 +20,15 @@ import { AutomotorDraft } from '../domain/models/automotor-draft';
   template: `
     <main
       id="automotor-form-page"
-      class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8"
+      class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
       aria-labelledby="automotor-form-title"
     >
-      <div
-        class="mb-6 rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-sm ring-1 ring-slate-900/5 backdrop-blur motion-safe:animate-[fade-up_0.45s_ease-out]"
+      <a
+        id="automotor-form-back-link"
+        routerLink="/"
+        class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+        >Volver al listado</a
       >
-        <a
-          id="automotor-form-back-link"
-          routerLink="/"
-          class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition hover:text-cyan-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-          >Volver al listado</a
-        >
-        <h1
-          id="automotor-form-title"
-          class="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl"
-        >
-          {{ title() }}
-        </h1>
-      </div>
 
       <app-automotor-form
         [mode]="mode()"
@@ -70,7 +60,7 @@ import { AutomotorDraft } from '../domain/models/automotor-draft';
       @if (titularLookupMessage()) {
         <p
           id="automotor-form-titular-lookup-success"
-          class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 motion-safe:animate-[fade-in_0.35s_ease-out]"
+          class="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-900 motion-safe:animate-[fade-in_0.35s_ease-out]"
           role="status"
         >
           {{ titularLookupMessage() }}
@@ -80,7 +70,7 @@ import { AutomotorDraft } from '../domain/models/automotor-draft';
       @if (isReasignacionTitular()) {
         <p
           id="automotor-form-reassignment"
-          class="mt-3 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-900 motion-safe:animate-[fade-in_0.35s_ease-out]"
+          class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 motion-safe:animate-[fade-in_0.35s_ease-out]"
           role="status"
         >
           Estas reasignando el automotor a un nuevo titular responsable.

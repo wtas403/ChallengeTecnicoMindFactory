@@ -1,59 +1,103 @@
-# ChallengeTecnicoFrontend
+# Challenge Tecnico Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.7.
+Aplicacion Angular para la gestion de automotores y titulares, integrada con la API del mismo repositorio.
 
-## Development server
+## Stack
 
-To start a local development server, run:
+- Angular 21
+- TypeScript
+- Signals + RxJS
+- Tailwind CSS v4
+- Vitest
 
-```bash
-ng serve
-```
+## Levantar el proyecto
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Frontend solo
 
 ```bash
-ng generate component component-name
+npm install
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+La app queda disponible en `http://localhost:4200`.
+
+Nota: `npm start` no agrega proxy al backend.
+
+### Frontend en Docker
 
 ```bash
-ng generate --help
+npm install
+npm run start:docker
 ```
 
-## Building
+Esta variante usa `proxy.docker.json` y reenvia `/api` hacia `http://api:3000`.
 
-To build the project run:
+### Full stack del repo
+
+Desde la raiz `ChallengeTecnicoMindFactory/`:
 
 ```bash
-ng build
+docker compose up --build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Scripts utiles
 
 ```bash
-ng test
+npm start
+npm run start:docker
+npm run build
+npm test
 ```
 
-## Running end-to-end tests
+## Alcance implementado
 
-For end-to-end (e2e) testing, run:
+- listado de automotores con busqueda por dominio o CUIT
+- ordenamiento por columnas principales
+- paginacion client-side
+- formulario de alta y edicion
+- baja de automotor
+- validaciones de dominio, CUIT y fecha `YYYYMM`
+- deteccion de cambios sin guardar
+- flujo inline de titular inexistente
+- manejo consistente de errores HTTP incluyendo `422`
+- pantallas responsive para listado y formulario
+
+## Supuestos tecnicos
+
+- La API base del frontend es `'/api'`.
+- La paginacion del listado se resuelve en cliente porque el backend actual expone `GET /api/automotores` sin contrato paginado.
+- En frontend se usa `Titular` como concepto de dominio; `Sujeto` queda reservado para DTOs e integracion.
+
+## Testing
+
+Incluye tests de:
+
+- validadores de negocio
+- formulario principal
+- flujo de error API
+- listado con estados y paginacion
+
+Ejecutar:
 
 ```bash
-ng e2e
+npm test
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Estructura principal
 
-## Additional Resources
+```text
+src/app/
+  core/
+  features/automotores/
+    application/
+    components/
+    domain/
+    infrastructure/
+    pages/
+    routes/
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Documentacion complementaria
+
+- `docs/DECISIONES_FRONTEND.md`
+- `docs/ESCALABILIDAD_FRONT.md`

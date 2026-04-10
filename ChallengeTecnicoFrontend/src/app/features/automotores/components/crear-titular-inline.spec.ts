@@ -1,11 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { LucideIconProvider, LUCIDE_ICONS, TriangleAlert } from 'lucide-angular';
 import { CrearTitularInline } from './crear-titular-inline';
+
+const lucideProviders = [
+  {
+    provide: LUCIDE_ICONS,
+    multi: true,
+    useValue: new LucideIconProvider({ TriangleAlert }),
+  },
+];
 
 describe('CrearTitularInline', () => {
   it('requiere nombre completo para emitir create', async () => {
     await TestBed.configureTestingModule({
       imports: [CrearTitularInline],
+      providers: lucideProviders,
     }).compileComponents();
 
     const fixture = TestBed.createComponent(CrearTitularInline);
@@ -24,6 +34,7 @@ describe('CrearTitularInline', () => {
   it('emite create con nombre normalizado', async () => {
     await TestBed.configureTestingModule({
       imports: [CrearTitularInline],
+      providers: lucideProviders,
     }).compileComponents();
 
     const fixture = TestBed.createComponent(CrearTitularInline);
@@ -42,6 +53,7 @@ describe('CrearTitularInline', () => {
   it('expone ids y atributos aria para el campo nombre completo', async () => {
     await TestBed.configureTestingModule({
       imports: [CrearTitularInline],
+      providers: lucideProviders,
     }).compileComponents();
 
     const fixture = TestBed.createComponent(CrearTitularInline);
