@@ -76,10 +76,18 @@ Incluye tests de:
 - formulario principal
 - flujo de error API
 - listado con estados y paginacion
+- flujos end-to-end en `../e2e`
 
 Ejecutar:
 
 ```bash
+npm test
+```
+
+E2E:
+
+```bash
+cd ../e2e
 npm test
 ```
 
@@ -99,5 +107,6 @@ src/app/
 
 ## Documentacion complementaria
 
-- `docs/DECISIONES_FRONTEND.md`
+- `docs/DECISION_LOG.md`
 - `docs/ESCALABILIDAD_FRONT.md`
+- `docs/IA_ACELERADORES.md`
