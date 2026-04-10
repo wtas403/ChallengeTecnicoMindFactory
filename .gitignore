@@ -1,0 +1,33 @@
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+.angular/
+coverage/
+
+# Environment files
+.env
+**/.env
+
+# IDE/editor
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# IA/aceleradores artifacts
+ChallengeTecnicoFrontend/docs/IA_ACELERADORES.md
+ChallengeTecnicoFrontend/.agents/
+ChallengeTecnicoFrontend/skills-lock.json
+ChallengeTecnicoFrontend/llms-full.txt
+ChallengeTecnicoFrontend/llms.txt.
