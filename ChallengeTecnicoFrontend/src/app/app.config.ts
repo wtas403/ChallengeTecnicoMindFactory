@@ -7,8 +7,10 @@ import {
   ArrowUpDown,
   LucideIconProvider,
   LUCIDE_ICONS,
+  RotateCw,
   Search,
   TriangleAlert,
+  X,
 } from 'lucide-angular';
 import { API_BASE_URL } from './core/config/api.config';
 import { apiErrorInterceptor } from './core/http/api-error.interceptor';
@@ -27,7 +29,15 @@ export const appConfig: ApplicationConfig = {
     {
       provide: LUCIDE_ICONS,
       multi: true,
-      useValue: new LucideIconProvider({ Search, ArrowUp, ArrowDown, ArrowUpDown, TriangleAlert }),
+      useValue: new LucideIconProvider({
+        Search,
+        X,
+        RotateCw,
+        ArrowUp,
+        ArrowDown,
+        ArrowUpDown,
+        TriangleAlert,
+      }),
     },
     { provide: API_BASE_URL, useValue: '/api' },
     { provide: AUTOMOTORES_REPOSITORY, useExisting: HttpAutomotoresRepository },

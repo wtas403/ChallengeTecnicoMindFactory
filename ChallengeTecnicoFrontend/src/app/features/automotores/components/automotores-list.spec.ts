@@ -8,8 +8,10 @@ import {
   ArrowUpDown,
   LucideIconProvider,
   LUCIDE_ICONS,
+  RotateCw,
   Search,
   TriangleAlert,
+  X,
 } from 'lucide-angular';
 import { ApiError } from '../../../core/http/api-error';
 import { AutomotoresListFacade } from '../application/facades/automotores-list-facade';
@@ -36,6 +38,7 @@ function createFacadeMock() {
   const automotoresState = signal<readonly Automotor[]>([]);
   const loadStatusState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
   const errorState = signal<ApiError | null>(null);
+  const isRefreshingState = signal(false);
   const filtersState = signal({ searchTerm: '' });
   const sortState = signal<AutomotoresSort>({ field: 'dominio', direction: 'asc' });
   const pageState = signal<AutomotoresPage>({ page: 1, pageSize: 10 });
@@ -49,13 +52,14 @@ function createFacadeMock() {
     loadStatusState,
     errorState,
     pageState,
-    facade: {
-      automotores: automotoresState,
-      loadStatus: loadStatusState,
-      isLoading: computed(() => loadStatusState() === 'loading'),
-      hasError: computed(() => loadStatusState() === 'error' && errorState() !== null),
-      error: errorState,
-      isEmpty: computed(() => loadStatusState() === 'success' && automotoresState().length === 0),
+      facade: {
+        automotores: automotoresState,
+        loadStatus: loadStatusState,
+        isLoading: computed(() => loadStatusState() === 'loading'),
+        isRefreshing: isRefreshingState,
+        hasError: computed(() => loadStatusState() === 'error' && errorState() !== null),
+        error: errorState,
+        isEmpty: computed(() => loadStatusState() === 'success' && automotoresState().length === 0),
       filters: filtersState,
       sort: sortState,
       page: pageState,
@@ -81,7 +85,15 @@ const lucideProviders = [
   {
     provide: LUCIDE_ICONS,
     multi: true,
-    useValue: new LucideIconProvider({ Search, ArrowUp, ArrowDown, ArrowUpDown, TriangleAlert }),
+    useValue: new LucideIconProvider({
+      Search,
+      RotateCw,
+      X,
+      ArrowUp,
+      ArrowDown,
+      ArrowUpDown,
+      TriangleAlert,
+    }),
   },
 ];
 
@@ -155,7 +167,7 @@ describe('AutomotoresList', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('No hay resultados');
+    expect(compiled.textContent).toContain('No hay automotores');
   });
 
   it('muestra estado error con mensaje accionable', async () => {
@@ -209,12 +221,15 @@ describe('AutomotoresList', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const rows = compiled.querySelectorAll('tbody tr');
     const searchInput = compiled.querySelector<HTMLInputElement>('#automotores-search');
+    const reloadButton = compiled.querySelector<HTMLButtonElement>('#automotores-reload');
     const table = compiled.querySelector<HTMLTableElement>('#automotores-table');
     const editButton = compiled.querySelector<HTMLButtonElement>('#automotor-AA123BB-edit');
     const deleteButton = compiled.querySelector<HTMLButtonElement>('#automotor-AA123BB-delete');
 
     expect(rows.length).toBe(2);
     expect(searchInput).not.toBeNull();
+    expect(searchInput?.getAttribute('placeholder')).toBe('AA123BB o 20123456786');
+    expect(reloadButton).not.toBeNull();
     expect(table).not.toBeNull();
     expect(editButton).not.toBeNull();
     expect(deleteButton).not.toBeNull();
@@ -315,5 +330,34 @@ describe('AutomotoresList', () => {
     confirmButton?.click();
 
     expect(facadeMock.facade.deleteByDominio).toHaveBeenCalledWith('AA123BB');
+  });
+
+  it('muestra estado de sincronizacion durante recarga', async () => {
+    const facadeMock = createFacadeMock();
+    facadeMock.loadStatusState.set('success');
+    facadeMock.automotoresState.set([createAutomotorFixture('AA123BB')]);
+    facadeMock.facade.isRefreshing.set(true);
+
+    await TestBed.configureTestingModule({
+      imports: [AutomotoresList],
+      providers: [
+        provideRouter([]),
+        ...lucideProviders,
+        {
+          provide: AutomotoresListFacade,
+          useValue: facadeMock.facade,
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AutomotoresList);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const reloadButton = compiled.querySelector<HTMLButtonElement>('#automotores-reload');
+
+    expect(compiled.textContent).toContain('Sincronizando datos...');
+    expect(reloadButton?.getAttribute('aria-busy')).toBe('true');
+    expect(reloadButton?.disabled).toBe(true);
   });
 });

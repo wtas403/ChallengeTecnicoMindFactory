@@ -53,7 +53,7 @@ describe('AutomotorForm', () => {
     expect(saveSpy).not.toHaveBeenCalled();
     expect(component.isConfirmDialogOpen()).toBe(true);
 
-    component.confirmCreate();
+    component.confirmSubmit();
 
     expect(saveSpy).toHaveBeenCalledWith({
       dominio: 'AA123BB',
@@ -65,7 +65,7 @@ describe('AutomotorForm', () => {
     });
   });
 
-  it('emite draft directamente en modo edicion', async () => {
+  it('abre confirmacion en modo edicion antes de emitir el draft', async () => {
     await TestBed.configureTestingModule({
       imports: [AutomotorForm],
     }).compileComponents();
@@ -77,7 +77,6 @@ describe('AutomotorForm', () => {
     const component = fixture.componentInstance;
     const saveSpy = vi.spyOn(component.save, 'emit');
 
-    component.form.controls.dominio.enable();
     component.form.setValue({
       dominio: 'aa123bb',
       chasis: 'CH-001',
@@ -89,7 +88,11 @@ describe('AutomotorForm', () => {
 
     component.onSubmit();
 
-    expect(component.isConfirmDialogOpen()).toBe(false);
+    expect(saveSpy).not.toHaveBeenCalled();
+    expect(component.isConfirmDialogOpen()).toBe(true);
+
+    component.confirmSubmit();
+
     expect(saveSpy).toHaveBeenCalledWith({
       dominio: 'AA123BB',
       chasis: 'CH-001',
@@ -98,6 +101,36 @@ describe('AutomotorForm', () => {
       fechaFabricacion: '202401',
       cuitTitular: '20123456786',
     });
+  });
+
+  it('mantiene dominio readonly en modo edicion con helper accesible', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AutomotorForm],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AutomotorForm);
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('initialDraft', {
+      dominio: 'AA123BB',
+      chasis: 'CH-001',
+      motor: 'MO-001',
+      color: 'Negro',
+      fechaFabricacion: '202401',
+      cuitTitular: '20123456786',
+    });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const dominioInput = compiled.querySelector<HTMLInputElement>('#automotor-form-dominio');
+    const helper = compiled.querySelector<HTMLElement>('#automotor-form-dominio-helper');
+
+    expect(dominioInput?.readOnly).toBe(true);
+    expect(dominioInput?.getAttribute('aria-describedby')).toContain(
+      'automotor-form-dominio-helper',
+    );
+    expect(helper?.textContent).toContain(
+      'El dominio es identificador del registro y no puede modificarse.',
+    );
   });
 
   it('expone ids y atributos aria en errores de campo', async () => {
