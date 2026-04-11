@@ -85,11 +85,28 @@ export class AutomotorFormPage {
     await this.page.locator("#automotor-confirmation-cancel").click();
   }
 
+  async cancelSubmitConfirmation(): Promise<void> {
+    await this.cancelCreateConfirmation();
+  }
+
   async createInlineTitular(nombreCompleto: string): Promise<void> {
     await expect(this.page.locator("#titular-inline-section")).toBeVisible();
     await this.page
       .locator("#titular-inline-nombre-completo")
       .fill(nombreCompleto);
     await this.page.locator("#titular-inline-submit").click();
+  }
+
+  async requestDelete(): Promise<void> {
+    await this.page.locator("#automotor-form-delete").click();
+    await expect(this.page.locator("#automotor-form-delete-confirm")).toBeVisible();
+  }
+
+  async cancelDelete(): Promise<void> {
+    await this.page.locator("#automotor-form-delete-cancel").click();
+  }
+
+  async confirmDelete(): Promise<void> {
+    await this.page.locator("#automotor-form-delete-confirm").click();
   }
 }

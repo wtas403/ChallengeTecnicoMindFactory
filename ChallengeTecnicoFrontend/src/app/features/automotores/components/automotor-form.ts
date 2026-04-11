@@ -93,7 +93,9 @@ const EMPTY_DRAFT: AutomotorDraft = {
               <label for="automotor-form-dominio" class="text-xs font-semibold text-slate-800"
                 >Dominio</label
               >
-              <p class="m-0 text-[0.7rem] text-slate-500">Formato: AAA999 o AA999AA.</p>
+              <p id="automotor-form-dominio-format" class="m-0 text-[0.7rem] text-slate-500">
+                Formato: AAA999 o AA999AA.
+              </p>
               <input
                 id="automotor-form-dominio"
                 type="text"
@@ -126,7 +128,9 @@ const EMPTY_DRAFT: AutomotorDraft = {
               >
                 Fecha fabricacion
               </label>
-              <p class="m-0 text-[0.7rem] text-slate-500">Formato: YYYYMM.</p>
+              <p id="automotor-form-fecha-fabricacion-format" class="m-0 text-[0.7rem] text-slate-500">
+                Formato: YYYYMM.
+              </p>
               <input
                 id="automotor-form-fecha-fabricacion"
                 type="text"
@@ -233,7 +237,9 @@ const EMPTY_DRAFT: AutomotorDraft = {
               <label for="automotor-form-cuit-titular" class="text-xs font-semibold text-slate-800">
                 CUIT titular
               </label>
-              <p class="m-0 text-[0.7rem] text-slate-500">Se validara antes de guardar.</p>
+              <p id="automotor-form-cuit-titular-helper" class="m-0 text-[0.7rem] text-slate-500">
+                Se validara antes de guardar.
+              </p>
               <input
                 id="automotor-form-cuit-titular"
                 type="text"
@@ -341,6 +347,22 @@ const EMPTY_DRAFT: AutomotorDraft = {
               </dt>
               <dd class="m-0 mt-1 text-sm font-semibold text-slate-950">
                 {{ confirmationDraft()?.dominio }}
+              </dd>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Chasis
+              </dt>
+              <dd class="m-0 mt-1 text-sm font-semibold text-slate-950">
+                {{ confirmationDraft()?.chasis }}
+              </dd>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Motor
+              </dt>
+              <dd class="m-0 mt-1 text-sm font-semibold text-slate-950">
+                {{ confirmationDraft()?.motor }}
               </dd>
             </div>
             <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
@@ -522,6 +544,11 @@ export class AutomotorForm {
   fieldDescribedBy(fieldName: keyof AutomotorDraft): string | null {
     const describedBy: string[] = [];
 
+    const helperId = this.fieldHelperId(fieldName);
+    if (helperId) {
+      describedBy.push(helperId);
+    }
+
     if (fieldName === 'dominio' && this.isEditMode()) {
       describedBy.push('automotor-form-dominio-helper');
     }
@@ -535,6 +562,22 @@ export class AutomotorForm {
 
   fieldErrorId(fieldName: keyof AutomotorDraft): string {
     return `automotor-form-${fieldName}-error`;
+  }
+
+  private fieldHelperId(fieldName: keyof AutomotorDraft): string | null {
+    if (fieldName === 'dominio') {
+      return 'automotor-form-dominio-format';
+    }
+
+    if (fieldName === 'fechaFabricacion') {
+      return 'automotor-form-fecha-fabricacion-format';
+    }
+
+    if (fieldName === 'cuitTitular') {
+      return 'automotor-form-cuit-titular-helper';
+    }
+
+    return null;
   }
 
   controlError(fieldName: keyof AutomotorDraft): string | null {

@@ -1,22 +1,17 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { ApiError, ApiFieldError, isApiError } from '../../../../core/http/api-error';
+import { ApiError, isApiError } from '../../../../core/http/api-error';
 import { AutomotorDraft } from '../../domain/models/automotor-draft';
 import {
   AUTOMOTORES_REPOSITORY,
   AutomotorMutationDraft,
   AutomotoresRepository,
 } from '../../infrastructure/repositories/automotores-repository';
-import {
-  TITULARES_REPOSITORY,
-  TitularesRepository,
-} from '../../infrastructure/repositories/titulares-repository';
 import { mapAutomotorToDraft } from '../../infrastructure/mappers/automotor.mapper';
 import { AutomotorFormStore } from '../stores/automotor-form-store';
 
 @Injectable({ providedIn: 'root' })
 export class AutomotorFormFacade {
   private readonly automotoresRepository = inject<AutomotoresRepository>(AUTOMOTORES_REPOSITORY);
-  private readonly titularesRepository = inject<TitularesRepository>(TITULARES_REPOSITORY);
   private readonly formStore = inject(AutomotorFormStore);
 
   readonly mode = computed(() => this.formStore.mode());
@@ -53,22 +48,17 @@ export class AutomotorFormFacade {
     this.formStore.setSubmitLoading();
 
     try {
-      const hasTitular = await this.lookupTitularBeforeSubmit(
-        draft.cuitTitular,
-        draft,
-        'create',
-        null,
-      );
-
-      if (!hasTitular) {
-        return false;
-      }
-
       await this.automotoresRepository.create(draft);
       this.formStore.setSubmitSuccess(draft);
       return true;
     } catch (error) {
-      this.formStore.setError(this.ensureApiError(error));
+      const apiError = this.ensureApiError(error);
+
+      if (apiError.code === 'TITULAR_NOT_FOUND') {
+        this.formStore.setTitularCreationRequired(draft, 'create', null);
+      }
+
+      this.formStore.setError(apiError);
       return false;
     }
   }
@@ -77,22 +67,17 @@ export class AutomotorFormFacade {
     this.formStore.setSubmitLoading();
 
     try {
-      const hasTitular = await this.lookupTitularBeforeSubmit(
-        draft.cuitTitular,
-        draft,
-        'update',
-        dominio,
-      );
-
-      if (!hasTitular) {
-        return false;
-      }
-
       await this.automotoresRepository.update(dominio, draft);
       this.formStore.setSubmitSuccess(draft);
       return true;
     } catch (error) {
-      this.formStore.setError(this.ensureApiError(error));
+      const apiError = this.ensureApiError(error);
+
+      if (apiError.code === 'TITULAR_NOT_FOUND') {
+        this.formStore.setTitularCreationRequired(draft, 'update', dominio);
+      }
+
+      this.formStore.setError(apiError);
       return false;
     }
   }
@@ -163,43 +148,6 @@ export class AutomotorFormFacade {
       this.formStore.setError(this.ensureApiError(error));
       return false;
     }
-  }
-
-  private async lookupTitularBeforeSubmit(
-    cuit: string,
-    draft: AutomotorDraft,
-    operation: 'create' | 'update',
-    dominio: string | null,
-  ): Promise<boolean> {
-    this.formStore.setTitularLookupLoading();
-
-    try {
-      const titular = await this.titularesRepository.getByCuit(cuit);
-
-      if (!titular) {
-        this.formStore.setTitularLookupNotFound();
-        this.formStore.setTitularCreationRequired(draft, operation, dominio);
-        this.formStore.setError(
-          new ApiError(422, 'No existe un sujeto para el CUIT informado.', 'TITULAR_NOT_FOUND', [
-            this.mapFieldError(
-              'nombreTitular',
-              'No existe un sujeto para este CUIT. Completa el nombre para crearlo junto al automotor.',
-            ),
-          ]),
-        );
-        return false;
-      }
-
-      this.formStore.setTitularLookupSuccess(titular);
-      return true;
-    } catch (error) {
-      this.formStore.setTitularLookupError();
-      throw error;
-    }
-  }
-
-  private mapFieldError(field: string, message: string): ApiFieldError {
-    return { field, message };
   }
 
   private ensureApiError(error: unknown): ApiError {

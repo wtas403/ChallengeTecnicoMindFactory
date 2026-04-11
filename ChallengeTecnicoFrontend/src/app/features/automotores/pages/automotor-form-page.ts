@@ -258,6 +258,10 @@ export class AutomotorFormPage {
       : await this.automotorFormFacade.create(draft);
 
     if (!isSuccess) {
+      if (this.showTitularCreation()) {
+        return;
+      }
+
       this.notifyFormError(
         dominio
           ? `No se pudo actualizar el automotor ${dominio}.`

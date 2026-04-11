@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma';
 
 export async function resetDatabase() {
+  await prisma.webVitalMetric.deleteMany();
   await prisma.automotor.deleteMany();
   await prisma.sujeto.deleteMany();
 }

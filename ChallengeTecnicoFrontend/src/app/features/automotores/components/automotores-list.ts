@@ -11,11 +11,13 @@ import { ApiError } from '../../../core/http/api-error';
 import { NotificationStore } from '../../../core/notifications/notification-store';
 import { LucideAngularModule } from 'lucide-angular';
 import { AutomotoresListFacade } from '../application/facades/automotores-list-facade';
+import { PaginationNavArrowsComponent } from './pagination-nav-arrows';
+import { PaginationPagesComponent } from './pagination-pages';
 import { AutomotoresSortField } from '../domain/types/automotores-sort';
 
 @Component({
   selector: 'app-automotores-list',
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, PaginationNavArrowsComponent, PaginationPagesComponent],
   template: `
     <section
       id="automotores-list-section"
@@ -41,7 +43,11 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                   [value]="searchTerm()"
                   (input)="onSearchInput($event)"
                   placeholder="AA123BB o 20123456786"
+                  aria-describedby="automotores-search-help"
                 />
+                <p id="automotores-search-help" class="sr-only">
+                  Busca automotores por dominio o CUIT del titular.
+                </p>
                 @if (searchTerm().trim().length > 0) {
                   <button
                     type="button"
@@ -49,7 +55,11 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                     aria-label="Borrar busqueda"
                     (click)="clearSearch()"
                   >
-                    <lucide-angular name="x" class="size-3.5"></lucide-angular>
+                    <lucide-angular
+                      name="x"
+                      class="size-3.5"
+                      aria-hidden="true"
+                    ></lucide-angular>
                   </button>
                 }
               </div>
@@ -68,6 +78,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                     name="rotate-cw"
                     class="size-4"
                     [class.animate-spin]="isRefreshing()"
+                    aria-hidden="true"
                   ></lucide-angular>
                 </button>
                 <button
@@ -362,38 +373,32 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
               </p>
             </div>
 
-            <div class="flex flex-wrap items-center justify-center gap-2 xl:justify-center">
-              <button
-                id="automotores-page-previous"
-                type="button"
-                class="app-button app-button-secondary"
-                (click)="previousPage()"
-                [disabled]="currentPage() <= 1"
-              >
-                Anterior
-              </button>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <app-pagination-nav-arrows
+                [position]="'leading'"
+                [currentPage]="currentPage()"
+                [totalPages]="totalPages()"
+                (goFirst)="goToFirstPage()"
+                (goPrevious)="previousPage()"
+                (goNext)="nextPage()"
+                (goLast)="goToLastPage()"
+              ></app-pagination-nav-arrows>
 
-              @for (pageNumber of visiblePageNumbers(); track pageNumber) {
-                <button
-                  type="button"
-                  [class]="paginationButtonClass(pageNumber)"
-                  (click)="goToPage(pageNumber)"
-                  [attr.aria-current]="pageNumber === currentPage() ? 'page' : null"
-                  [attr.aria-label]="pageAriaLabel(pageNumber)"
-                >
-                  {{ pageNumber }}
-                </button>
-              }
+              <app-pagination-pages
+                [currentPage]="currentPage()"
+                [visiblePages]="visiblePageNumbers()"
+                (goToPage)="goToPage($event)"
+              ></app-pagination-pages>
 
-              <button
-                id="automotores-page-next"
-                type="button"
-                class="app-button app-button-secondary"
-                (click)="nextPage()"
-                [disabled]="currentPage() >= totalPages()"
-              >
-                Siguiente
-              </button>
+              <app-pagination-nav-arrows
+                [position]="'trailing'"
+                [currentPage]="currentPage()"
+                [totalPages]="totalPages()"
+                (goFirst)="goToFirstPage()"
+                (goPrevious)="previousPage()"
+                (goNext)="nextPage()"
+                (goLast)="goToLastPage()"
+              ></app-pagination-nav-arrows>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 xl:justify-end">
@@ -441,7 +446,11 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
             <div
               class="flex size-10 items-center justify-center rounded-full bg-amber-100 text-amber-700"
             >
-              <lucide-angular name="triangle-alert" class="size-5"></lucide-angular>
+              <lucide-angular
+                name="triangle-alert"
+                class="size-5"
+                aria-hidden="true"
+              ></lucide-angular>
             </div>
             <div>
               <p class="editorial-kicker m-0 text-[0.68rem] font-semibold text-slate-500">
@@ -561,6 +570,14 @@ export class AutomotoresList implements OnInit {
     this.facade.setPage(page);
   }
 
+  goToFirstPage(): void {
+    this.facade.setPage(1);
+  }
+
+  goToLastPage(): void {
+    this.facade.setPage(this.totalPages());
+  }
+
   onEdit(dominio: string): void {
     void this.router.navigate([`/${dominio}/editar`]);
   }
@@ -647,20 +664,6 @@ export class AutomotoresList implements OnInit {
     }
 
     return pages;
-  }
-
-  pageAriaLabel(pageNumber: number): string {
-    return pageNumber === this.currentPage()
-      ? `Pagina actual, ${pageNumber}`
-      : `Ir a la pagina ${pageNumber}`;
-  }
-
-  paginationButtonClass(pageNumber: number): string {
-    const baseClass = 'app-pagination-button';
-
-    return pageNumber === this.currentPage()
-      ? `${baseClass} app-pagination-button-active`
-      : `${baseClass} app-pagination-button-idle`;
   }
 
   private async reloadList(): Promise<void> {

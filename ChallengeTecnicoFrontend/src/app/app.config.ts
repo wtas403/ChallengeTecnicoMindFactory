@@ -1,5 +1,10 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import {
   ArrowDown,
@@ -18,12 +23,16 @@ import { HttpAutomotoresRepository } from './features/automotores/infrastructure
 import { AUTOMOTORES_REPOSITORY } from './features/automotores/infrastructure/repositories/automotores-repository';
 import { HttpTitularesRepository } from './features/automotores/infrastructure/repositories/http-titulares-repository';
 import { TITULARES_REPOSITORY } from './features/automotores/infrastructure/repositories/titulares-repository';
+import { WebVitalsTelemetryService } from './core/performance/web-vitals-telemetry.service';
 
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    provideAppInitializer(() => {
+      inject(WebVitalsTelemetryService).init();
+    }),
     provideRouter(routes),
     provideHttpClient(withInterceptors([apiErrorInterceptor])),
     {

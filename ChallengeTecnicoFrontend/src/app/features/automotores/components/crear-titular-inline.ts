@@ -26,7 +26,11 @@ import { LucideAngularModule } from 'lucide-angular';
           <div
             class="mt-0.5 flex size-9 items-center justify-center rounded-full bg-amber-100 text-amber-700"
           >
-            <lucide-angular name="triangle-alert" class="size-4"></lucide-angular>
+            <lucide-angular
+              name="triangle-alert"
+              class="size-4"
+              aria-hidden="true"
+            ></lucide-angular>
           </div>
           <div class="min-w-0 flex-1">
             <div

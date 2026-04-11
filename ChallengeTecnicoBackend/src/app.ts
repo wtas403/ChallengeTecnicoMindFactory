@@ -5,6 +5,7 @@ import { errorHandlerMiddleware } from './middlewares/error-handler.middleware';
 import { notFoundMiddleware } from './middlewares/not-found.middleware';
 import { automotoresRouter } from './routes/automotores.routes';
 import { sujetosRouter } from './routes/sujetos.routes';
+import { webVitalsRouter } from './routes/web-vitals.routes';
 
 export function createApp() {
   const app = express();
@@ -22,6 +23,7 @@ export function createApp() {
 
   app.use('/api/automotores', automotoresRouter);
   app.use('/api/sujetos', sujetosRouter);
+  app.use('/api/metrics/web-vitals', webVitalsRouter);
   app.use(notFoundMiddleware);
   app.use(errorHandlerMiddleware);
 

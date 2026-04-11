@@ -6,10 +6,6 @@ import {
   AUTOMOTORES_REPOSITORY,
   AutomotoresRepository,
 } from '../../infrastructure/repositories/automotores-repository';
-import {
-  TITULARES_REPOSITORY,
-  TitularesRepository,
-} from '../../infrastructure/repositories/titulares-repository';
 import { AutomotorFormStore } from '../stores/automotor-form-store';
 import { AutomotorFormFacade } from './automotor-form-facade';
 
@@ -22,11 +18,6 @@ describe('AutomotorFormFacade', () => {
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-  };
-
-  const titularesRepositoryMock: TitularesRepository = {
-    getByCuit: vi.fn(),
-    create: vi.fn(),
   };
 
   const draftFixture: AutomotorDraft = {
@@ -49,10 +40,6 @@ describe('AutomotorFormFacade', () => {
           provide: AUTOMOTORES_REPOSITORY,
           useValue: automotoresRepositoryMock,
         },
-        {
-          provide: TITULARES_REPOSITORY,
-          useValue: titularesRepositoryMock,
-        },
       ],
     });
 
@@ -66,29 +53,26 @@ describe('AutomotorFormFacade', () => {
     expect(facade.isLoading()).toBe(false);
   });
 
-  it('bloquea el submit si el titular no existe', async () => {
-    vi.mocked(titularesRepositoryMock.getByCuit).mockResolvedValue(null);
+  it('bloquea el submit y habilita alta inline si backend responde TITULAR_NOT_FOUND', async () => {
+    vi.mocked(automotoresRepositoryMock.create).mockRejectedValue(
+      new ApiError(422, 'No existe un sujeto para el CUIT informado.', 'TITULAR_NOT_FOUND', [
+        {
+          field: 'nombreTitular',
+          message:
+            'No existe un sujeto para este CUIT. Ingresa el nombre completo para crearlo junto al automotor.',
+        },
+      ]),
+    );
 
     const isSuccess = await facade.create(draftFixture);
 
     expect(isSuccess).toBe(false);
-    expect(automotoresRepositoryMock.create).not.toHaveBeenCalled();
-    expect(facade.titularLookupStatus()).toBe('not-found');
+    expect(automotoresRepositoryMock.create).toHaveBeenCalledWith(draftFixture);
     expect(facade.isTitularCreationVisible()).toBe(true);
-    expect(facade.fieldErrors()).toEqual([
-      {
-        field: 'nombreTitular',
-        message:
-          'No existe un sujeto para este CUIT. Completa el nombre para crearlo junto al automotor.',
-      },
-    ]);
+    expect(facade.error()?.code).toBe('TITULAR_NOT_FOUND');
   });
 
-  it('crea automotor cuando el titular existe', async () => {
-    vi.mocked(titularesRepositoryMock.getByCuit).mockResolvedValue({
-      cuit: '20123456786',
-      nombreCompleto: 'Juan Perez',
-    });
+  it('crea automotor cuando backend valida correctamente', async () => {
     vi.mocked(automotoresRepositoryMock.create).mockResolvedValue({
       dominio: 'AA123BB',
       chasis: 'CH-001',
@@ -105,14 +89,9 @@ describe('AutomotorFormFacade', () => {
 
     expect(isSuccess).toBe(true);
     expect(automotoresRepositoryMock.create).toHaveBeenCalledWith(draftFixture);
-    expect(facade.titularLookupStatus()).toBe('success');
   });
 
   it('expone error de API al fallar update', async () => {
-    vi.mocked(titularesRepositoryMock.getByCuit).mockResolvedValue({
-      cuit: '20123456786',
-      nombreCompleto: 'Juan Perez',
-    });
     vi.mocked(automotoresRepositoryMock.update).mockRejectedValue(
       new ApiError(422, 'No se pudo actualizar', 'VALIDATION_ERROR'),
     );
@@ -124,18 +103,27 @@ describe('AutomotorFormFacade', () => {
   });
 
   it('reintenta submit pendiente enviando nombreTitular en forma atomica', async () => {
-    vi.mocked(titularesRepositoryMock.getByCuit).mockResolvedValue(null);
-    vi.mocked(automotoresRepositoryMock.create).mockResolvedValue({
-      dominio: 'AA123BB',
-      chasis: 'CH-001',
-      motor: 'MO-001',
-      color: 'Negro',
-      fechaFabricacion: '202401',
-      titular: {
-        cuit: '20123456786',
-        nombreCompleto: 'Juan Perez',
-      },
-    });
+    vi.mocked(automotoresRepositoryMock.create)
+      .mockRejectedValueOnce(
+        new ApiError(422, 'No existe un sujeto para el CUIT informado.', 'TITULAR_NOT_FOUND', [
+          {
+            field: 'nombreTitular',
+            message:
+              'No existe un sujeto para este CUIT. Ingresa el nombre completo para crearlo junto al automotor.',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce({
+        dominio: 'AA123BB',
+        chasis: 'CH-001',
+        motor: 'MO-001',
+        color: 'Negro',
+        fechaFabricacion: '202401',
+        titular: {
+          cuit: '20123456786',
+          nombreCompleto: 'Juan Perez',
+        },
+      });
 
     const firstSubmitResult = await facade.create(draftFixture);
     expect(firstSubmitResult).toBe(false);
@@ -143,7 +131,6 @@ describe('AutomotorFormFacade', () => {
     const retryResult = await facade.createTitularAndRetry('Juan Perez');
 
     expect(retryResult).toBe(true);
-    expect(titularesRepositoryMock.create).not.toHaveBeenCalled();
     expect(automotoresRepositoryMock.create).toHaveBeenCalledWith({
       ...draftFixture,
       nombreTitular: 'Juan Perez',
@@ -152,18 +139,27 @@ describe('AutomotorFormFacade', () => {
   });
 
   it('reintenta con el draft pendiente mas reciente cuando se edita durante el inline', async () => {
-    vi.mocked(titularesRepositoryMock.getByCuit).mockResolvedValue(null);
-    vi.mocked(automotoresRepositoryMock.create).mockResolvedValue({
-      dominio: 'AB123CD',
-      chasis: 'CH-001',
-      motor: 'MO-001',
-      color: 'Negro',
-      fechaFabricacion: '202401',
-      titular: {
-        cuit: '20123456786',
-        nombreCompleto: 'Juan Perez',
-      },
-    });
+    vi.mocked(automotoresRepositoryMock.create)
+      .mockRejectedValueOnce(
+        new ApiError(422, 'No existe un sujeto para el CUIT informado.', 'TITULAR_NOT_FOUND', [
+          {
+            field: 'nombreTitular',
+            message:
+              'No existe un sujeto para este CUIT. Ingresa el nombre completo para crearlo junto al automotor.',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce({
+        dominio: 'AB123CD',
+        chasis: 'CH-001',
+        motor: 'MO-001',
+        color: 'Negro',
+        fechaFabricacion: '202401',
+        titular: {
+          cuit: '20123456786',
+          nombreCompleto: 'Juan Perez',
+        },
+      });
 
     const firstSubmitResult = await facade.create(draftFixture);
     expect(firstSubmitResult).toBe(false);

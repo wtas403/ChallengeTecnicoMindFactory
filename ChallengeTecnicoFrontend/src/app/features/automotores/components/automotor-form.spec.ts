@@ -65,6 +65,37 @@ describe('AutomotorForm', () => {
     });
   });
 
+  it('muestra chasis y motor en el modal de confirmacion', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AutomotorForm],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AutomotorForm);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.form.setValue({
+      dominio: 'AA123BB',
+      chasis: 'CH-001',
+      motor: 'MO-001',
+      color: 'Negro',
+      fechaFabricacion: '202401',
+      cuitTitular: '20123456786',
+    });
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const dialog = compiled.querySelector<HTMLElement>('#automotor-create-confirmation-dialog');
+
+    expect(dialog).not.toBeNull();
+    expect(dialog?.textContent).toContain('Chasis');
+    expect(dialog?.textContent).toContain('CH-001');
+    expect(dialog?.textContent).toContain('Motor');
+    expect(dialog?.textContent).toContain('MO-001');
+  });
+
   it('abre confirmacion en modo edicion antes de emitir el draft', async () => {
     await TestBed.configureTestingModule({
       imports: [AutomotorForm],
@@ -151,7 +182,8 @@ describe('AutomotorForm', () => {
 
     expect(dominioInput).not.toBeNull();
     expect(dominioInput?.getAttribute('aria-invalid')).toBe('true');
-    expect(dominioInput?.getAttribute('aria-describedby')).toBe('automotor-form-dominio-error');
+    expect(dominioInput?.getAttribute('aria-describedby')).toContain('automotor-form-dominio-format');
+    expect(dominioInput?.getAttribute('aria-describedby')).toContain('automotor-form-dominio-error');
     expect(dominioError?.textContent).toContain('Este campo es obligatorio.');
   });
 });

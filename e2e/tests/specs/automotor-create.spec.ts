@@ -13,6 +13,11 @@ test.describe('Automotores - alta', () => {
     await formPage.fillDraft(draft);
 
     await formPage.submit();
+    const confirmationDialog = page.locator('#automotor-create-confirmation-dialog');
+    await expect(confirmationDialog).toContainText('Chasis');
+    await expect(confirmationDialog).toContainText(draft.chasis);
+    await expect(confirmationDialog).toContainText('Motor');
+    await expect(confirmationDialog).toContainText(draft.motor);
     await formPage.cancelCreateConfirmation();
     await expect(page.locator('#automotor-create-confirmation-dialog')).toBeHidden();
 
