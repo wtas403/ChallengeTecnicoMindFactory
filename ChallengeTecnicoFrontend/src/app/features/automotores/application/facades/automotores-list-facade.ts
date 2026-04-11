@@ -16,6 +16,7 @@ export class AutomotoresListFacade {
   readonly automotores = computed(() => this.automotoresStore.automotores());
   readonly loadStatus = computed(() => this.automotoresStore.loadStatus());
   readonly isLoading = computed(() => this.automotoresStore.isLoading());
+  readonly isRefreshing = computed(() => this.automotoresStore.isRefreshing());
   readonly hasError = computed(() => this.automotoresStore.hasError());
   readonly error = computed(() => this.automotoresStore.error());
   readonly isEmpty = computed(() => this.automotoresStore.isEmpty());
@@ -28,7 +29,7 @@ export class AutomotoresListFacade {
   readonly deletingDominios = computed(() => this.deletingDominiosState());
 
   async load(): Promise<void> {
-    if (this.automotoresStore.isLoading()) {
+    if (this.automotoresStore.isLoading() || this.automotoresStore.isRefreshing()) {
       return;
     }
 
@@ -43,7 +44,33 @@ export class AutomotoresListFacade {
   }
 
   async reload(): Promise<void> {
-    await this.load();
+    if (this.automotoresStore.isLoading() || this.automotoresStore.isRefreshing()) {
+      return;
+    }
+
+    const hasLoadedData =
+      this.automotoresStore.loadStatus() === 'success' || this.automotoresStore.totalItems() > 0;
+
+    if (hasLoadedData) {
+      this.automotoresStore.setRefreshing();
+    } else {
+      this.automotoresStore.setLoading();
+    }
+
+    try {
+      const automotores = await this.automotoresRepository.list();
+      this.automotoresStore.setSuccess(automotores);
+    } catch (error) {
+      const apiError = this.ensureApiError(error);
+
+      if (hasLoadedData) {
+        this.automotoresStore.finishRefresh();
+        throw apiError;
+      }
+
+      this.automotoresStore.setError(apiError);
+      throw apiError;
+    }
   }
 
   setSearchTerm(searchTerm: string): void {
@@ -85,7 +112,7 @@ export class AutomotoresListFacade {
       await this.automotoresRepository.delete(dominio);
       this.automotoresStore.removeByDominio(dominio);
     } catch (error) {
-      this.automotoresStore.setError(this.ensureApiError(error));
+      throw this.ensureApiError(error);
     } finally {
       this.deletingDominiosState.update((current) => current.filter((item) => item !== dominio));
     }

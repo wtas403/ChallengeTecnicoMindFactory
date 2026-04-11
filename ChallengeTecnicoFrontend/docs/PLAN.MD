@@ -892,11 +892,3 @@ La implementación se considerará lista cuando:
 - estructura coherente y defendible técnicamente
 
 ---
-
-## Próximo paso de implementación
-
-Cuando se habilite la ejecución del plan:
-1. crear la base del shell real de la app
-2. montar la feature `automotores`
-3. implementar primero dominio + validadores + rutas
-4. avanzar luego con listado y formulario

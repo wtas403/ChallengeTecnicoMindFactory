@@ -32,6 +32,7 @@ export class AutomotoresStore {
   private readonly automotoresState = signal<readonly Automotor[]>([]);
   private readonly loadStatusState = signal<AutomotoresLoadStatus>('idle');
   private readonly errorState = signal<ApiError | null>(null);
+  private readonly isRefreshingState = signal(false);
   private readonly filtersState = signal<AutomotoresFilters>(INITIAL_FILTERS);
   private readonly sortState = signal<AutomotoresSort>(INITIAL_SORT);
   private readonly pageState = signal<AutomotoresPage>(INITIAL_PAGE);
@@ -42,6 +43,7 @@ export class AutomotoresStore {
   readonly sort = computed(() => this.sortState());
   readonly page = computed(() => this.pageState());
   readonly isLoading = computed(() => this.loadStatusState() === 'loading');
+  readonly isRefreshing = computed(() => this.isRefreshingState());
   readonly hasError = computed(
     () => this.loadStatusState() === 'error' && this.errorState() !== null,
   );
@@ -72,19 +74,31 @@ export class AutomotoresStore {
 
   setLoading(): void {
     this.loadStatusState.set('loading');
+    this.isRefreshingState.set(false);
+    this.errorState.set(null);
+  }
+
+  setRefreshing(): void {
+    this.isRefreshingState.set(true);
     this.errorState.set(null);
   }
 
   setSuccess(automotores: readonly Automotor[]): void {
     this.automotoresState.set(automotores);
     this.loadStatusState.set('success');
+    this.isRefreshingState.set(false);
     this.errorState.set(null);
     this.ensurePageIsInRange();
   }
 
   setError(error: ApiError): void {
     this.loadStatusState.set('error');
+    this.isRefreshingState.set(false);
     this.errorState.set(error);
+  }
+
+  finishRefresh(): void {
+    this.isRefreshingState.set(false);
   }
 
   setSearchTerm(searchTerm: string): void {
@@ -132,6 +146,7 @@ export class AutomotoresStore {
       current.filter((automotor) => automotor.dominio !== dominio),
     );
     this.loadStatusState.set('success');
+    this.isRefreshingState.set(false);
     this.errorState.set(null);
     this.ensurePageIsInRange();
   }
