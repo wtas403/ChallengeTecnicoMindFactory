@@ -7,6 +7,8 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { ApiError } from '../../../core/http/api-error';
+import { NotificationStore } from '../../../core/notifications/notification-store';
 import { LucideAngularModule } from 'lucide-angular';
 import { AutomotoresListFacade } from '../application/facades/automotores-list-facade';
 import { AutomotoresSortField } from '../domain/types/automotores-sort';
@@ -17,57 +19,70 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
   template: `
     <section
       id="automotores-list-section"
-      class="editorial-panel rounded-[1.5rem] p-4 motion-safe:animate-[fade-up_0.5s_ease-out] sm:p-5"
+      class="editorial-panel rounded-[1.5rem] p-4 pb-24 motion-safe:animate-[fade-up_0.5s_ease-out] sm:p-5"
       aria-live="polite"
-      [attr.aria-busy]="isLoading()"
+      [attr.aria-busy]="isLoading() || isRefreshing()"
     >
-      <header
-        class="mb-5 grid gap-4 border-b border-slate-200 pb-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"
-      >
-        <div class="grid gap-2">
-          <p class="editorial-kicker text-[0.68rem] font-semibold text-slate-500">
-            Consulta operativa
-          </p>
-          <div class="grid gap-1">
+      <header class="mb-5 grid gap-4 border-b border-slate-200 pb-4">
+        <div class="grid min-w-0 gap-2">
+          <div class="grid min-w-0 gap-2">
             <label
-              class="text-sm font-semibold tracking-wide text-slate-800"
+              class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
               for="automotores-search"
             >
               Buscar por dominio o CUIT
             </label>
-            <p class="m-0 max-w-2xl text-sm text-slate-600">
-              Busca por dominio o CUIT y administra los registros disponibles.
-            </p>
-          </div>
-        </div>
-        <div class="flex flex-col gap-3 lg:items-end">
-          <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-            <div class="relative min-w-0 sm:min-w-84">
-              <input
-                id="automotores-search"
-                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 transition placeholder:text-slate-500 focus-visible:border-sky-700"
-                type="search"
-                [value]="searchTerm()"
-                (input)="onSearchInput($event)"
-                placeholder="Ej: AA123BB o 20123456786"
-                aria-describedby="automotores-search-hint"
-              />
+            <div class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+              <div class="relative min-w-0 flex-1 sm:max-w-md">
+                <input
+                  id="automotores-search"
+                  class="app-input w-full pr-10"
+                  type="search"
+                  [value]="searchTerm()"
+                  (input)="onSearchInput($event)"
+                  placeholder="AA123BB o 20123456786"
+                />
+                @if (searchTerm().trim().length > 0) {
+                  <button
+                    type="button"
+                    class="app-icon-button app-icon-button-sm absolute right-2 top-1/2 -translate-y-1/2"
+                    aria-label="Borrar busqueda"
+                    (click)="clearSearch()"
+                  >
+                    <lucide-angular name="x" class="size-3.5"></lucide-angular>
+                  </button>
+                }
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  id="automotores-reload"
+                  type="button"
+                  class="app-icon-button"
+                  (click)="reload()"
+                  [disabled]="isLoading() || isRefreshing()"
+                  [attr.aria-label]="isRefreshing() ? 'Recargando listado' : 'Recargar datos'"
+                  [attr.aria-busy]="isRefreshing()"
+                >
+                  <lucide-angular
+                    name="rotate-cw"
+                    class="size-4"
+                    [class.animate-spin]="isRefreshing()"
+                  ></lucide-angular>
+                </button>
+                <button
+                  id="automotores-create-link"
+                  type="button"
+                  class="app-button app-button-primary hidden sm:inline-flex"
+                  (click)="onCreate()"
+                >
+                  Crear automotor
+                </button>
+              </div>
             </div>
-            <button
-              id="automotores-reload"
-              type="button"
-              class="inline-flex size-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
-              (click)="reload()"
-              [disabled]="isLoading()"
-              aria-label="Actualizar listado"
-            >
-              <lucide-angular name="search" class="size-4"></lucide-angular>
-            </button>
           </div>
-          <p id="automotores-search-hint" class="text-xs text-slate-500 lg:text-right">
-            Busca coincidencias sobre dominio o CUIT del titular.
-          </p>
         </div>
+        <span class="sr-only" role="status">{{ refreshStatusMessage() }}</span>
       </header>
 
       @if (isLoading()) {
@@ -112,11 +127,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
           class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600"
           role="status"
         >
-          <p class="editorial-title text-xl font-semibold text-slate-900">No hay resultados</p>
-          <p class="mx-auto mt-2 max-w-md">
-            Ajusta el termino de busqueda o recarga el listado para volver a consultar la flota
-            disponible.
-          </p>
+          <p class="editorial-title text-xl font-semibold text-slate-900">No hay automotores</p>
         </div>
       } @else {
         <div id="automotores-state-success" class="grid gap-4">
@@ -160,7 +171,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                   <button
                     type="button"
                     [id]="mobileEditButtonId(automotor.dominio)"
-                    class="inline-flex items-center justify-center rounded-lg border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                    class="app-button app-button-primary"
                     aria-label="Editar {{ automotor.dominio }}"
                     (click)="onEdit(automotor.dominio)"
                   >
@@ -169,7 +180,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                   <button
                     type="button"
                     [id]="mobileDeleteButtonId(automotor.dominio)"
-                    class="inline-flex items-center justify-center rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-800 transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="app-button app-button-danger"
                     aria-label="Eliminar {{ automotor.dominio }}"
                     [disabled]="isDeleting(automotor.dominio)"
                     (click)="onDelete(automotor.dominio)"
@@ -194,7 +205,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                   <th scope="col" [attr.aria-sort]="ariaSortFor('dominio')">
                     <button
                       type="button"
-                      class="flex w-full items-center gap-1.5 px-4 py-3 text-left text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-700 transition hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                      class="app-table-sort-button"
                       (click)="toggleSort('dominio')"
                     >
                       <span>Dominio</span>
@@ -219,7 +230,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                   <th scope="col" [attr.aria-sort]="ariaSortFor('titular')">
                     <button
                       type="button"
-                      class="flex w-full items-center gap-1.5 px-4 py-3 text-left text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-700 transition hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                      class="app-table-sort-button"
                       (click)="toggleSort('titular')"
                     >
                       <span>Dueno</span>
@@ -244,7 +255,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                   <th scope="col" [attr.aria-sort]="ariaSortFor('cuit')">
                     <button
                       type="button"
-                      class="flex w-full items-center gap-1.5 px-4 py-3 text-left text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-700 transition hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                      class="app-table-sort-button"
                       (click)="toggleSort('cuit')"
                     >
                       <span>CUIT</span>
@@ -269,7 +280,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                   <th scope="col" [attr.aria-sort]="ariaSortFor('fechaFabricacion')">
                     <button
                       type="button"
-                      class="flex w-full items-center gap-1.5 px-4 py-3 text-left text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-700 transition hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                      class="app-table-sort-button"
                       (click)="toggleSort('fechaFabricacion')"
                     >
                       <span>Fabricacion</span>
@@ -315,7 +326,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                         <button
                           type="button"
                           [id]="editButtonId(automotor.dominio)"
-                          class="text-sm font-semibold text-sky-900 underline-offset-2 transition hover:text-sky-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                          class="app-action-link"
                           aria-label="Editar {{ automotor.dominio }}"
                           (click)="onEdit(automotor.dominio)"
                         >
@@ -324,7 +335,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
                         <button
                           type="button"
                           [id]="deleteButtonId(automotor.dominio)"
-                          class="text-sm font-semibold text-rose-800 underline-offset-2 transition hover:text-rose-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          class="app-action-link app-action-link-danger"
                           aria-label="Eliminar {{ automotor.dominio }}"
                           [disabled]="isDeleting(automotor.dominio)"
                           (click)="onDelete(automotor.dominio)"
@@ -355,7 +366,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
               <button
                 id="automotores-page-previous"
                 type="button"
-                class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+                class="app-button app-button-secondary"
                 (click)="previousPage()"
                 [disabled]="currentPage() <= 1"
               >
@@ -377,7 +388,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
               <button
                 id="automotores-page-next"
                 type="button"
-                class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+                class="app-button app-button-secondary"
                 (click)="nextPage()"
                 [disabled]="currentPage() >= totalPages()"
               >
@@ -393,7 +404,7 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
               >
               <select
                 id="automotores-page-size"
-                class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 transition focus-visible:border-sky-700 focus-visible:outline-none"
+                class="app-input app-select"
                 [value]="pageSize()"
                 (change)="onPageSizeChange($event)"
               >
@@ -405,82 +416,97 @@ import { AutomotoresSortField } from '../domain/types/automotores-sort';
           </footer>
         </div>
       }
+    </section>
 
-      @if (pendingDeleteDominio()) {
-        <div
-          id="automotor-delete-confirmation-backdrop"
-          class="fixed inset-0 z-40 bg-slate-950/35"
-          (click)="cancelDelete()"
-        ></div>
+    @if (pendingDeleteDominio()) {
+      <div
+        id="automotor-delete-confirmation-backdrop"
+        class="fixed inset-0 z-40 bg-slate-950/35"
+        (click)="cancelDelete()"
+      ></div>
 
-        <div
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          (keydown.escape)="cancelDelete()"
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        (keydown.escape)="cancelDelete()"
+      >
+        <section
+          id="automotor-delete-confirmation-dialog"
+          class="editorial-panel w-full max-w-lg rounded-xl p-5"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="automotor-delete-title"
+          aria-describedby="automotor-delete-description"
         >
-          <section
-            id="automotor-delete-confirmation-dialog"
-            class="editorial-panel w-full max-w-lg rounded-xl p-5"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="automotor-delete-title"
-            aria-describedby="automotor-delete-description"
-          >
-            <div class="mb-4 flex items-start gap-3 border-b border-slate-200 pb-3">
-              <div
-                class="flex size-10 items-center justify-center rounded-full bg-amber-100 text-amber-700"
-              >
-                <lucide-angular name="triangle-alert" class="size-5"></lucide-angular>
-              </div>
-              <div>
-                <p class="editorial-kicker m-0 text-[0.68rem] font-semibold text-slate-500">
-                  Confirmacion
-                </p>
-                <h3
-                  id="automotor-delete-title"
-                  class="editorial-title mt-1 text-lg font-semibold text-slate-950"
-                >
-                  Confirmar eliminacion
-                </h3>
-              </div>
+          <div class="mb-4 flex items-start gap-3 border-b border-slate-200 pb-3">
+            <div
+              class="flex size-10 items-center justify-center rounded-full bg-amber-100 text-amber-700"
+            >
+              <lucide-angular name="triangle-alert" class="size-5"></lucide-angular>
             </div>
-
-            <p id="automotor-delete-description" class="m-0 text-sm text-slate-600">
-              Se eliminara el automotor
-              <span class="font-semibold text-slate-900">{{ pendingDeleteDominio() }}</span
-              >. Esta accion no se puede deshacer.
-            </p>
-
-            <div class="mt-5 flex flex-wrap gap-2.5 border-t border-slate-200 pt-4">
-              <button
-                id="automotor-delete-confirm"
-                type="button"
-                class="inline-flex items-center justify-center rounded-lg border border-rose-600 bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
-                (click)="confirmDelete()"
+            <div>
+              <p class="editorial-kicker m-0 text-[0.68rem] font-semibold text-slate-500">
+                Confirmacion
+              </p>
+              <h3
+                id="automotor-delete-title"
+                class="editorial-title mt-1 text-lg font-semibold text-slate-950"
               >
                 Confirmar eliminacion
-              </button>
-              <button
-                id="automotor-delete-cancel"
-                type="button"
-                class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-                (click)="cancelDelete()"
-              >
-                Cancelar
-              </button>
+              </h3>
             </div>
-          </section>
-        </div>
-      }
-    </section>
+          </div>
+
+          <p id="automotor-delete-description" class="m-0 text-sm text-slate-600">
+            Se eliminara el automotor
+            <span class="font-semibold text-slate-900">{{ pendingDeleteDominio() }}</span
+            >. Esta accion no se puede deshacer.
+          </p>
+
+          <div class="mt-5 flex flex-wrap gap-2.5 border-t border-slate-200 pt-4">
+            <button
+              id="automotor-delete-confirm"
+              type="button"
+              class="app-button app-button-danger"
+              (click)="confirmDelete()"
+            >
+              Confirmar eliminacion
+            </button>
+            <button
+              id="automotor-delete-cancel"
+              type="button"
+              class="app-button app-button-secondary"
+              (click)="cancelDelete()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </section>
+      </div>
+    }
+
+    <div
+      class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:hidden"
+    >
+      <button
+        id="automotores-create-link-mobile"
+        type="button"
+        class="app-button app-button-primary w-full"
+        (click)="onCreate()"
+      >
+        Crear automotor
+      </button>
+    </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutomotoresList implements OnInit {
   private readonly facade = inject(AutomotoresListFacade);
   private readonly router = inject(Router);
+  private readonly notificationStore = inject(NotificationStore);
 
   readonly automotores = computed(() => this.facade.automotores());
   readonly isLoading = computed(() => this.facade.isLoading());
+  readonly isRefreshing = computed(() => this.facade.isRefreshing());
   readonly hasError = computed(() => this.facade.hasError());
   readonly isEmpty = computed(() => this.facade.isEmpty());
   readonly totalItems = computed(() => this.facade.totalItems());
@@ -491,6 +517,9 @@ export class AutomotoresList implements OnInit {
   readonly errorMessage = computed(
     () => this.facade.error()?.message ?? 'No se pudieron cargar los automotores.',
   );
+  readonly refreshStatusMessage = computed(() =>
+    this.isRefreshing() ? 'Sincronizando datos...' : '',
+  );
   readonly skeletonItems = [1, 2, 3];
   readonly pendingDeleteDominio = signal<string | null>(null);
 
@@ -499,7 +528,7 @@ export class AutomotoresList implements OnInit {
   }
 
   reload(): void {
-    void this.facade.reload();
+    void this.reloadList();
   }
 
   onSearchInput(event: Event): void {
@@ -510,6 +539,10 @@ export class AutomotoresList implements OnInit {
     }
 
     this.facade.setSearchTerm(target.value);
+  }
+
+  clearSearch(): void {
+    this.facade.setSearchTerm('');
   }
 
   toggleSort(field: AutomotoresSortField): void {
@@ -532,6 +565,10 @@ export class AutomotoresList implements OnInit {
     void this.router.navigate([`/${dominio}/editar`]);
   }
 
+  onCreate(): void {
+    void this.router.navigate(['/crear']);
+  }
+
   onDelete(dominio: string): void {
     this.pendingDeleteDominio.set(dominio);
   }
@@ -548,7 +585,7 @@ export class AutomotoresList implements OnInit {
     }
 
     this.pendingDeleteDominio.set(null);
-    void this.facade.deleteByDominio(dominio);
+    void this.deleteAutomotor(dominio);
   }
 
   isDeleting(dominio: string): boolean {
@@ -597,32 +634,6 @@ export class AutomotoresList implements OnInit {
     return `Mostrando ${start}-${end} de ${totalItems} automotores`;
   }
 
-  resultsSummary(): string {
-    if (this.searchTerm().trim().length > 0) {
-      return `${this.totalItems()} resultado${this.totalItems() === 1 ? '' : 's'} para "${this.searchTerm().trim()}"`;
-    }
-
-    return `${this.totalItems()} automotores disponibles`;
-  }
-
-  pageSummary(): string {
-    return `Vista actual ordenada por ${this.sortLabel().toLocaleLowerCase()}.`;
-  }
-
-  sortLabel(): string {
-    const sort = this.facade.sort();
-    const fieldLabel =
-      sort.field === 'dominio'
-        ? 'Dominio'
-        : sort.field === 'titular'
-          ? 'Dueno'
-          : sort.field === 'cuit'
-            ? 'CUIT'
-            : 'Fabricacion';
-
-    return `${fieldLabel} ${sort.direction === 'asc' ? 'ascendente' : 'descendente'}`;
-  }
-
   visiblePageNumbers(): readonly number[] {
     const total = this.totalPages();
     const current = this.currentPage();
@@ -645,12 +656,40 @@ export class AutomotoresList implements OnInit {
   }
 
   paginationButtonClass(pageNumber: number): string {
-    const baseClass =
-      'inline-flex min-w-10 items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300';
+    const baseClass = 'app-pagination-button';
 
     return pageNumber === this.currentPage()
-      ? `${baseClass} border-slate-900 bg-slate-900 text-white`
-      : `${baseClass} border-slate-300 bg-white text-slate-700`;
+      ? `${baseClass} app-pagination-button-active`
+      : `${baseClass} app-pagination-button-idle`;
+  }
+
+  private async reloadList(): Promise<void> {
+    try {
+      await this.facade.reload();
+    } catch (error) {
+      this.notificationStore.error(
+        this.messageForApiError(error, 'No se pudieron recargar los datos.'),
+      );
+    }
+  }
+
+  private async deleteAutomotor(dominio: string): Promise<void> {
+    try {
+      await this.facade.deleteByDominio(dominio);
+      this.notificationStore.success(`Automotor ${dominio} eliminado correctamente.`);
+    } catch (error) {
+      this.notificationStore.error(
+        this.messageForApiError(error, `No se pudo eliminar el automotor ${dominio}.`),
+      );
+    }
+  }
+
+  private messageForApiError(error: unknown, fallbackMessage: string): string {
+    if (error instanceof ApiError) {
+      return error.message;
+    }
+
+    return fallbackMessage;
   }
 
   editButtonId(dominio: string): string {
