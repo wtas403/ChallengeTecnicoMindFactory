@@ -114,4 +114,229 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
   }
+
+  .app-input {
+    border: 1px solid rgb(203 213 225);
+    background: white;
+    color: rgb(15 23 42);
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .app-select {
+    cursor: pointer;
+  }
+
+  .app-select:hover:not(:disabled) {
+    background: rgb(248 250 252);
+  }
+
+  .app-input:focus-visible {
+    border-color: var(--app-accent-strong);
+  }
+
+  .app-input[type='search'] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .app-input[type='search']::-webkit-search-decoration,
+  .app-input[type='search']::-webkit-search-cancel-button,
+  .app-input[type='search']::-webkit-search-results-button,
+  .app-input[type='search']::-webkit-search-results-decoration {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  .app-button,
+  .app-icon-button,
+  .app-action-link,
+  .app-table-sort-button,
+  .app-pagination-button {
+    cursor: pointer;
+  }
+
+  .app-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    transition:
+      transform 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      opacity 150ms ease;
+  }
+
+  .app-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .app-button:active:not(:disabled),
+  .app-icon-button:active:not(:disabled),
+  .app-action-link:active:not(:disabled),
+  .app-table-sort-button:active:not(:disabled),
+  .app-pagination-button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .app-button:disabled,
+  .app-icon-button:disabled,
+  .app-action-link:disabled,
+  .app-pagination-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .app-button-primary {
+    background: rgb(15 23 42);
+    border-color: rgb(15 23 42);
+    color: white;
+  }
+
+  .app-button-primary:hover:not(:disabled) {
+    background: rgb(30 41 59);
+    border-color: rgb(30 41 59);
+  }
+
+  .app-button-secondary {
+    background: white;
+    border-color: rgb(203 213 225);
+    color: rgb(51 65 85);
+  }
+
+  .app-button-secondary:hover:not(:disabled) {
+    background: rgb(248 250 252);
+  }
+
+  .app-button-danger {
+    background: rgb(225 29 72);
+    border-color: rgb(225 29 72);
+    color: white;
+  }
+
+  .app-button-danger:hover:not(:disabled) {
+    background: rgb(190 24 93);
+    border-color: rgb(190 24 93);
+  }
+
+  .app-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(203 213 225);
+    background: white;
+    color: rgb(51 65 85);
+    transition:
+      transform 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      opacity 150ms ease;
+  }
+
+  .app-icon-button:hover:not(:disabled) {
+    background: rgb(248 250 252);
+  }
+
+  .app-icon-button-sm {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+  }
+
+  .app-action-link {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(12 74 110);
+    text-decoration-line: underline;
+    text-underline-offset: 0.15rem;
+    transition:
+      color 150ms ease,
+      opacity 150ms ease;
+  }
+
+  .app-action-link:hover:not(:disabled) {
+    color: rgb(3 105 161);
+  }
+
+  .app-action-link-danger {
+    color: rgb(159 18 57);
+  }
+
+  .app-action-link-danger:hover:not(:disabled) {
+    color: rgb(136 19 55);
+  }
+
+  .app-table-sort-button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.375rem;
+    border: 0;
+    background: transparent;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(51 65 85);
+    transition: color 150ms ease;
+  }
+
+  .app-table-sort-button:hover {
+    color: rgb(3 105 161);
+  }
+
+  .app-pagination-button {
+    display: inline-flex;
+    min-width: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(203 213 225);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition:
+      transform 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      opacity 150ms ease;
+  }
+
+  .app-pagination-button-idle {
+    background: white;
+    color: rgb(51 65 85);
+  }
+
+  .app-pagination-button-idle:hover:not(:disabled) {
+    background: rgb(248 250 252);
+  }
+
+  .app-pagination-button-active {
+    background: rgb(15 23 42);
+    border-color: rgb(15 23 42);
+    color: white;
+  }
 }
