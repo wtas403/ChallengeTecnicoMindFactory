@@ -30,3 +30,5 @@ ChallengeTecnicoFrontend/.agents/
 ChallengeTecnicoFrontend/skills-lock.json
 ChallengeTecnicoFrontend/llms-full.txt
 ChallengeTecnicoFrontend/llms.txt.
+.codex
+.nvmrc

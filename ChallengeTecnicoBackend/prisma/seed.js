@@ -2,43 +2,79 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
+const CUIT_WEIGHTS = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+const TOTAL_RECORDS = 100;
+function calculateCheckDigit(firstTenDigits) {
+    const weightedSum = firstTenDigits
+        .split('')
+        .reduce((sum, digit, index) => sum + Number(digit) * CUIT_WEIGHTS[index], 0);
+    const remainder = weightedSum % 11;
+    const rawCheckDigit = 11 - remainder;
+    if (rawCheckDigit === 11) {
+        return 0;
+    }
+    if (rawCheckDigit === 10) {
+        return 9;
+    }
+    return rawCheckDigit;
+}
+function generateCuit(prefix, sequentialNumber) {
+    const numericBody = String(sequentialNumber).padStart(8, '0');
+    const firstTenDigits = `${prefix}${numericBody}`;
+    const checkDigit = calculateCheckDigit(firstTenDigits);
+    return `${firstTenDigits}${checkDigit}`;
+}
+function buildDominio(index) {
+    const firstLetter = String.fromCharCode(65 + Math.floor(index / 26) % 26);
+    const secondLetter = String.fromCharCode(65 + index % 26);
+    const digits = String(100 + index).padStart(3, '0').slice(-3);
+    const thirdLetter = String.fromCharCode(65 + (index + 2) % 26);
+    const fourthLetter = String.fromCharCode(65 + (index + 3) % 26);
+    return `${firstLetter}${secondLetter}${digits}${thirdLetter}${fourthLetter}`;
+}
+function buildFechaFabricacion(index) {
+    const year = 2000 + (index % 25);
+    const month = 1 + (index % 12);
+    return `${year}${String(month).padStart(2, '0')}`;
+}
+function buildSujetoName(index) {
+    return `Sujeto ${String(index + 1).padStart(2, '0')}`;
+}
 async function main() {
     await prisma.automotor.deleteMany();
     await prisma.sujeto.deleteMany();
-    const sujetos = await prisma.sujeto.createManyAndReturn({
-        data: [
-            { cuit: '20123456786', nombreCompleto: 'Juan Perez' },
-            { cuit: '27345678901', nombreCompleto: 'Maria Gomez' },
-            { cuit: '20987654321', nombreCompleto: 'Carlos Diaz' },
-        ],
+    const prefixes = ['20', '23', '27', '30', '33'];
+    const colors = ['Rojo', 'Azul', 'Blanco', 'Negro', 'Gris', 'Verde', 'Amarillo'];
+    const sujetosData = Array.from({ length: TOTAL_RECORDS }, (_, index) => {
+        const prefix = prefixes[index % prefixes.length];
+        const sequentialNumber = index + 1;
+        return {
+            cuit: generateCuit(prefix, sequentialNumber),
+            nombreCompleto: buildSujetoName(index),
+        };
+    });
+    await prisma.sujeto.createMany({
+        data: sujetosData,
+    });
+    const sujetos = await prisma.sujeto.findMany({
+        where: {
+            cuit: {
+                in: sujetosData.map((sujeto) => sujeto.cuit),
+            },
+        },
+        orderBy: {
+            cuit: 'asc',
+        },
     });
     await prisma.automotor.createMany({
-        data: [
-            {
-                dominio: 'AA123BB',
-                chasis: 'CHS-0001',
-                motor: 'MTR-0001',
-                color: 'Rojo',
-                fechaFabricacion: '202401',
-                sujetoId: sujetos[0].id,
-            },
-            {
-                dominio: 'AB456CD',
-                chasis: 'CHS-0002',
-                motor: 'MTR-0002',
-                color: 'Azul',
-                fechaFabricacion: '202212',
-                sujetoId: sujetos[1].id,
-            },
-            {
-                dominio: 'AAA999',
-                chasis: 'CHS-0003',
-                motor: 'MTR-0003',
-                color: 'Blanco',
-                fechaFabricacion: '202110',
-                sujetoId: sujetos[2].id,
-            },
-        ],
+        data: sujetos.map((sujeto, index) => ({
+            dominio: buildDominio(index),
+            chasis: `CHS-${String(index + 1).padStart(4, '0')}`,
+            motor: `MTR-${String(index + 1).padStart(4, '0')}`,
+            color: colors[index % colors.length],
+            fechaFabricacion: buildFechaFabricacion(index),
+            sujetoId: sujeto.id,
+        })),
     });
 }
 main()
@@ -48,5 +84,5 @@ main()
     .catch(async (error) => {
     console.error(error);
     await prisma.$disconnect();
-    process.exit(1);
+    throw error;
 });

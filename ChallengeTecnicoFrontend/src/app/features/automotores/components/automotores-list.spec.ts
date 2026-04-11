@@ -272,8 +272,10 @@ describe('AutomotoresList', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const pageIndicator = compiled.querySelector<HTMLElement>('#automotores-page-indicator');
+    const firstButton = compiled.querySelector<HTMLButtonElement>('#automotores-page-first');
     const previousButton = compiled.querySelector<HTMLButtonElement>('#automotores-page-previous');
     const nextButton = compiled.querySelector<HTMLButtonElement>('#automotores-page-next');
+    const lastButton = compiled.querySelector<HTMLButtonElement>('#automotores-page-last');
     const pageThreeButton = Array.from(compiled.querySelectorAll<HTMLButtonElement>('button')).find(
       (button) => button.textContent?.trim() === '3',
     );
@@ -281,15 +283,24 @@ describe('AutomotoresList', () => {
 
     expect(compiled.textContent).toContain('Mostrando 6-10 de 11 automotores');
     expect(pageIndicator?.textContent).toContain('Pagina 2 de 3');
+    expect(firstButton?.disabled).toBe(false);
     expect(previousButton?.disabled).toBe(false);
     expect(nextButton?.disabled).toBe(false);
+    expect(lastButton?.disabled).toBe(false);
     expect(pageThreeButton).not.toBeUndefined();
     expect(pageSizeSelect).not.toBeNull();
 
+    firstButton?.click();
+    previousButton?.click();
+    nextButton?.click();
+    lastButton?.click();
     pageThreeButton?.click();
     pageSizeSelect!.value = '20';
     pageSizeSelect?.dispatchEvent(new Event('change'));
 
+    expect(facadeMock.facade.setPage).toHaveBeenCalledWith(1);
+    expect(facadeMock.facade.previousPage).toHaveBeenCalledTimes(1);
+    expect(facadeMock.facade.nextPage).toHaveBeenCalledTimes(1);
     expect(facadeMock.facade.setPage).toHaveBeenCalledWith(3);
     expect(facadeMock.facade.setPageSize).toHaveBeenCalledWith(20);
   });

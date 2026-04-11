@@ -68,6 +68,22 @@ npm test
 - La paginacion del listado se resuelve en cliente porque el backend actual expone `GET /api/automotores` sin contrato paginado.
 - En frontend se usa `Titular` como concepto de dominio; `Sujeto` queda reservado para DTOs e integracion.
 
+## Supuestos de dominio
+
+- `dominio`, `chasis` y `motor` son identificadores univocos de automotor en el padron.
+- `CUIT` es identificador univoco de titular.
+- Un titular puede tener varios automotores.
+- Cambiar el `CUIT` en alta/edicion representa una reasignacion de titular.
+- La baja de automotor se define como **baja fisica** para el alcance de esta entrega.
+
+## Decisiones relevantes
+
+- Arquitectura por feature (`features/automotores`) con separacion `domain` / `application` / `infrastructure` para aislar logica de negocio de integracion y UI.
+- Manejo de errores HTTP con mapeo consistente (incluyendo `422`) para desacoplar componentes de `HttpErrorResponse`.
+- Estrategia de performance con `OnPush` y `trackBy` en vistas de listado para reducir renders innecesarios.
+- Validacion de negocio alineada con backend para `dominio`, `cuit` (modulo 11) y `fechaFabricacion` (`YYYYMM` no futura).
+- Paginacion client-side como decision explicita por contrato actual de API (sin endpoint paginado).
+
 ## Testing
 
 Incluye tests de:

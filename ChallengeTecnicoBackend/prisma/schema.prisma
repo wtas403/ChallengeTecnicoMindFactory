@@ -30,3 +30,23 @@ model Automotor {
 
   @@index([sujetoId])
 }
+
+model WebVitalMetric {
+  id             Int      @id @default(autoincrement())
+  metric         String   @db.VarChar(10)
+  value          Float
+  delta          Float
+  rating         String   @db.VarChar(32)
+  metricId       String   @db.VarChar(128)
+  pageId         String   @db.VarChar(255)
+  url            String   @db.VarChar(2048)
+  navigationType String   @db.VarChar(64)
+  sessionId      String   @db.VarChar(64)
+  userAgent      String   @db.VarChar(512)
+  appVersion     String   @db.VarChar(32)
+  occurredAt     DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([metric, pageId, occurredAt])
+  @@index([sessionId, occurredAt])
+}
